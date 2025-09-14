@@ -1,0 +1,329 @@
+/* MatchMaster AI Design System - Football Analytics Platform */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background System */
+    --background: 220 14% 6%;
+    --foreground: 210 40% 98%;
+    --surface: 220 13% 9%;
+    --surface-hover: 220 13% 12%;
+
+    /* Card System */
+    --card: 220 13% 9%;
+    --card-foreground: 210 40% 98%;
+    --card-border: 220 13% 15%;
+
+    /* Popover System */
+    --popover: 220 13% 9%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Football Brand Colors */
+    --pitch-green: 270 60% 20%;
+    --pitch-green-light: 270 50% 25%;
+    --pitch-green-dark: 270 70% 15%;
+    
+    --sky-blue: 280 55% 22%;
+    --sky-blue-light: 280 45% 27%;
+    --sky-blue-dark: 280 65% 17%;
+
+    /* Primary System - Dark Purple */
+    --primary: 270 60% 20%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 270 50% 25%;
+
+    /* Secondary System - Dark Purple Variant */
+    --secondary: 280 55% 22%;
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 280 45% 27%;
+
+    /* AI Theme Colors */
+    --ai-purple: 270 91% 65%;
+    --ai-purple-light: 270 85% 75%;
+    --ai-purple-dark: 270 95% 55%;
+    
+    --ai-cyan: 180 90% 50%;
+    --ai-cyan-light: 180 85% 60%;
+    --ai-cyan-dark: 180 95% 40%;
+
+    /* Accent System */
+    --accent: 270 91% 65%;
+    --accent-foreground: 210 40% 98%;
+    --accent-glow: 270 85% 75%;
+
+    /* Status Colors */
+    --success: 120 60% 50%;
+    --warning: 45 93% 58%;
+    --destructive: 0 84% 60%;
+    --info: 200 90% 50%;
+
+    /* Neutral System */
+    --muted: 220 13% 15%;
+    --muted-foreground: 215 20% 65%;
+    --border: 220 13% 15%;
+    --input: 220 13% 12%;
+    --ring: 120 60% 25%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--pitch-green)), hsl(var(--pitch-green-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--sky-blue)), hsl(var(--sky-blue-light)));
+    --gradient-ai: linear-gradient(135deg, hsl(var(--ai-purple)), hsl(var(--ai-cyan)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--pitch-green)) 0%, hsl(var(--sky-blue)) 50%, hsl(var(--ai-purple)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--surface)) 100%);
+
+    /* Shadows */
+    --shadow-primary: 0 10px 30px -10px hsl(var(--pitch-green) / 0.4);
+    --shadow-secondary: 0 10px 30px -10px hsl(var(--sky-blue) / 0.3);
+    --shadow-ai: 0 10px 30px -10px hsl(var(--ai-purple) / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(220 13% 3% / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-orbitron font-semibold;
+  }
+}
+
+@layer components {
+  /* Hero Gradient Background */
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  /* Animated Gradient Text */
+  .gradient-text {
+    background: var(--gradient-ai);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Card Styles */
+  .glass-card {
+    background: rgba(var(--card), 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--card-border));
+    box-shadow: var(--shadow-card);
+  }
+
+  .glow-card {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--card-border));
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+  }
+
+  .glow-card:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+
+  /* Button Variants */
+  .btn-hero {
+    background: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    border: none;
+    box-shadow: var(--shadow-primary);
+    transition: var(--transition-smooth);
+  }
+
+  .btn-hero:hover {
+    box-shadow: var(--shadow-primary), var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+
+  .btn-ai {
+    background: var(--gradient-ai);
+    color: hsl(var(--accent-foreground));
+    border: none;
+    box-shadow: var(--shadow-ai);
+    transition: var(--transition-bounce);
+  }
+
+  .btn-ai:hover {
+    box-shadow: var(--shadow-ai), 0 0 20px hsl(var(--ai-purple) / 0.5);
+    transform: scale(1.05);
+  }
+
+  /* Loading Animations */
+  .football-spin {
+    animation: football-rotate 2s linear infinite;
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Progress Bar */
+  .progress-gradient {
+    background: var(--gradient-secondary);
+  }
+
+  /* Particle Effects */
+  .particles {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .particles::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, hsl(var(--ai-purple) / 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: float 20s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  /* Font Families */
+  .font-inter { font-family: 'Inter', sans-serif; }
+  .font-orbitron { font-family: 'Orbitron', monospace; }
+
+  /* Transitions */
+  .transition-smooth { transition: var(--transition-smooth); }
+  .transition-bounce { transition: var(--transition-bounce); }
+
+  /* Shadows */
+  .shadow-primary { box-shadow: var(--shadow-primary); }
+  .shadow-secondary { box-shadow: var(--shadow-secondary); }
+  .shadow-ai { box-shadow: var(--shadow-ai); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+}
+
+/* Keyframe Animations */
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes football-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+  50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
