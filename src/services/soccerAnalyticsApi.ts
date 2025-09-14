@@ -8,6 +8,17 @@ import { io, Socket } from 'socket.io-client';
 const API_BASE_URL = 'http://localhost:5000/api';
 const WEBSOCKET_URL = 'http://localhost:5000';
 
+export interface MatchPrediction {
+  home_win_probability: number;
+  draw_probability: number;
+  away_win_probability: number;
+  predicted_outcome: string;
+  confidence: number;
+  model_used: string;
+  features_used?: number;
+  error?: string;
+}
+
 export interface SoccerAnalyticsData {
   videoMetrics: {
     duration: string;
@@ -41,12 +52,42 @@ export interface SoccerAnalyticsData {
     analysis_duration: number;
     goals_detected: number;
   };
+  matchPrediction?: MatchPrediction;
 }
 
 export interface AnalysisStatus {
   is_processing: boolean;
   has_video: boolean;
   has_results: boolean;
+}
+
+export interface SentimentAnalysisData {
+  positive: number;
+  negative: number;
+  neutral: number;
+  keywords: string[];
+  insights: string[];
+  recommendations: string[];
+}
+
+export interface TeamFeedbackData {
+  team: string;
+  source: string;
+  matches: Array<{
+    match: string;
+    competition: string | null;
+    analysis: {
+      weaknesses: string[];
+      strengths: string[];
+      successful_tactics: string[];
+      best_placements: string[];
+      overall_feedback: string;
+    };
+  }>;
+  team_summary: {
+    avg_insights: string[];
+    priority_actions: string[];
+  };
 }
 
 export interface LiveFrameData {
@@ -161,6 +202,77 @@ class SoccerAnalyticsApiService {
 
     if (!response.ok) {
       throw new Error('No frame data available');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Analyze sentiment from match feedback data
+   */
+  async analyzeSentiment(teamName: string, matchData: any): Promise<{
+    success: boolean;
+    team_name: string;
+    sentiment_analysis: SentimentAnalysisData;
+    api_key_available: boolean;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/sentiment_analysis`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        team_name: teamName,
+        match_data: matchData
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Sentiment analysis failed');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get team feedback data from reports
+   */
+  async getTeamFeedback(teamName: string): Promise<{
+    success: boolean;
+    team_name: string;
+    feedback_file: string;
+    data: TeamFeedbackData;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/team_feedback/${teamName}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get team feedback');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get ML prediction for match outcome
+   */
+  async predictMatchOutcome(analysisData?: SoccerAnalyticsData): Promise<MatchPrediction> {
+    const response = await fetch(`${API_BASE_URL}/predict_outcome`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: analysisData ? JSON.stringify(analysisData) : JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      // Return fallback prediction if available in error response
+      if (error.fallback_prediction) {
+        return error.fallback_prediction;
+      }
+      throw new Error(error.error || 'Failed to get match prediction');
     }
 
     return response.json();

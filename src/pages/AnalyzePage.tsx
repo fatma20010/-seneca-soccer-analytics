@@ -9,7 +9,7 @@ import ProcessingSteps from '@/components/analysis/ProcessingSteps';
 import AnalysisResults from '@/components/analysis/AnalysisResults';
 import LiveAnalysis from '@/components/analysis/LiveAnalysis';
 import TestConnection from '@/components/analysis/TestConnection';
-import { soccerAnalyticsApi, SoccerAnalyticsData } from '@/services/soccerAnalyticsApi';
+import { soccerAnalyticsApi, SoccerAnalyticsData, MatchPrediction } from '@/services/soccerAnalyticsApi';
 import { useToast } from '@/hooks/use-toast';
 
 export interface AnalysisData {
@@ -35,6 +35,17 @@ export interface AnalysisData {
     substitutions: string[];
     keyInsights: string[];
   };
+  soccerAnalytics?: {
+    total_distance_covered: number;
+    average_speeds: Record<string, number>;
+    max_speeds: Record<string, number>;
+    ball_touches: Record<string, number>;
+    pass_network: Record<string, number>;
+    team_classification: Record<string, number>;
+    analysis_duration: number;
+    goals_detected: number;
+  };
+  matchPrediction?: MatchPrediction;
 }
 
 const AnalyzePage = () => {
@@ -149,6 +160,25 @@ const AnalyzePage = () => {
           'Left flank offers most attacking opportunities',
           'Set pieces are a major strength to leverage'
         ]
+      },
+      soccerAnalytics: {
+        total_distance_covered: 15000,
+        average_speeds: { '1': 2.5, '2': 3.1, '3': 2.8, '4': 2.9 },
+        max_speeds: { '1': 8.5, '2': 9.2, '3': 7.8, '4': 8.9 },
+        ball_touches: { '1': 45, '2': 23, '3': 38, '4': 19 },
+        pass_network: { '1': 25, '2': 15, '3': 20, '4': 10 },
+        team_classification: { '1': 1, '2': 0, '3': 1, '4': 0 },
+        analysis_duration: 120,
+        goals_detected: 2
+      },
+      matchPrediction: {
+        home_win_probability: 0.65,
+        draw_probability: 0.20,
+        away_win_probability: 0.15,
+        predicted_outcome: 'Home Win',
+        confidence: 0.65,
+        model_used: 'mock_neural_network',
+        features_used: 16
       }
     };
 
@@ -159,6 +189,9 @@ const AnalyzePage = () => {
 
   // Real analysis handlers
   const handleRealAnalysisComplete = useCallback((results: SoccerAnalyticsData) => {
+    console.log('Analysis results received:', results);
+    console.log('Match prediction in results:', results.matchPrediction);
+    
     setAnalysisData(results as AnalysisData);
     setIsProcessing(false);
     setProgress(100);
@@ -166,7 +199,7 @@ const AnalyzePage = () => {
     
     toast({
       title: "Analysis complete!",
-      description: "Your soccer match analysis is ready.",
+      description: `Your soccer match analysis is ready. ${results.matchPrediction ? 'ML predictions included!' : 'No ML predictions available.'}`,
     });
   }, [toast, steps.length]);
 

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import { 
   Download, 
   Share, 
@@ -15,9 +16,13 @@ import {
   Star,
   Clock,
   Trophy,
-  Zap
+  Zap,
+  Search,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { AnalysisData } from '@/pages/AnalyzePage';
+import { soccerAnalyticsApi, SentimentAnalysisData, TeamFeedbackData, MatchPrediction } from '@/services/soccerAnalyticsApi';
 import {
   PieChart,
   Pie,
@@ -44,12 +49,66 @@ interface AnalysisResultsProps {
 
 const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Debug: Log the received data
+  useEffect(() => {
+    console.log('AnalysisResults received data:', data);
+    console.log('Match prediction data:', data.matchPrediction);
+  }, [data]);
+  const [teamName, setTeamName] = useState('Barcelona');
+  const [isAnalyzingSentiment, setIsAnalyzingSentiment] = useState(false);
+  const [enhancedSentimentData, setEnhancedSentimentData] = useState<SentimentAnalysisData | null>(null);
+  const [teamFeedback, setTeamFeedback] = useState<TeamFeedbackData | null>(null);
+  const [sentimentError, setSentimentError] = useState<string | null>(null);
 
-  const sentimentData = [
-    { name: 'Positive', value: data.sentiment.positive, color: '#10B981' },
-    { name: 'Negative', value: data.sentiment.negative, color: '#EF4444' },
-    { name: 'Neutral', value: data.sentiment.neutral, color: '#6B7280' }
+  // Use enhanced sentiment data if available, otherwise fallback to original data
+  const currentSentimentData = enhancedSentimentData || {
+    positive: data.sentiment.positive,
+    negative: data.sentiment.negative,
+    neutral: data.sentiment.neutral,
+    keywords: data.sentiment.keywords,
+    insights: [],
+    recommendations: []
+  };
+
+  const sentimentChartData = [
+    { name: 'Positive', value: currentSentimentData.positive, color: '#10B981' },
+    { name: 'Negative', value: currentSentimentData.negative, color: '#EF4444' },
+    { name: 'Neutral', value: currentSentimentData.neutral, color: '#6B7280' }
   ];
+
+  // Load team feedback on component mount
+  useEffect(() => {
+    loadTeamFeedback();
+  }, [teamName]);
+
+  const loadTeamFeedback = async () => {
+    try {
+      const feedback = await soccerAnalyticsApi.getTeamFeedback(teamName);
+      setTeamFeedback(feedback.data);
+    } catch (error) {
+      console.log('No team feedback available:', error);
+    }
+  };
+
+  const analyzeSentiment = async () => {
+    if (!teamFeedback) {
+      setSentimentError('No team feedback data available');
+      return;
+    }
+
+    setIsAnalyzingSentiment(true);
+    setSentimentError(null);
+
+    try {
+      const result = await soccerAnalyticsApi.analyzeSentiment(teamName, teamFeedback);
+      setEnhancedSentimentData(result.sentiment_analysis);
+    } catch (error) {
+      setSentimentError(error instanceof Error ? error.message : 'Sentiment analysis failed');
+    } finally {
+      setIsAnalyzingSentiment(false);
+    }
+  };
 
   const teamComparisonData = [
     { 
@@ -82,6 +141,7 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'video', label: 'Video Analysis', icon: Play },
     { id: 'scoring', label: 'ML Scoring', icon: TrendingUp },
+    { id: 'prediction', label: 'Match Prediction', icon: Target },
     { id: 'sentiment', label: 'Fan Sentiment', icon: Users },
     { id: 'recommendations', label: 'AI Insights', icon: Target }
   ];
@@ -370,20 +430,257 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
           </div>
         );
 
+      case 'prediction':
+        return (
+          <div className="space-y-6">
+            {/* Match Prediction Overview */}
+            <Card className="glow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-ai flex items-center justify-center">
+                    <Target className="w-4 h-4 text-white" />
+                  </div>
+                  Neural Network Match Prediction
+                </CardTitle>
+                <CardDescription>
+                  AI-powered outcome prediction based on video analysis features
+                  {data.matchPrediction?.model_used && (
+                    <span className="ml-2 text-xs px-2 py-1 rounded bg-ai-purple/20 text-ai-purple">
+                      Model: {data.matchPrediction.model_used}
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.matchPrediction ? (
+                  <div className="space-y-6">
+                    {/* Prediction Results */}
+                    <div className="text-center">
+                      <div className="text-4xl font-orbitron font-bold gradient-text mb-2">
+                        {data.matchPrediction.predicted_outcome}
+                      </div>
+                      <div className="text-lg text-muted-foreground mb-4">
+                        Predicted Outcome (Confidence: {(data.matchPrediction.confidence * 100).toFixed(1)}%)
+                      </div>
+                      
+                      {/* Probability Bars */}
+                      <div className="space-y-4 max-w-md mx-auto">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                              Home Win
+                            </span>
+                            <span>{(data.matchPrediction.home_win_probability * 100).toFixed(1)}%</span>
+                          </div>
+                          <Progress value={data.matchPrediction.home_win_probability * 100} className="h-3" />
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                              Draw
+                            </span>
+                            <span>{(data.matchPrediction.draw_probability * 100).toFixed(1)}%</span>
+                          </div>
+                          <Progress value={data.matchPrediction.draw_probability * 100} className="h-3" />
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                              Away Win
+                            </span>
+                            <span>{(data.matchPrediction.away_win_probability * 100).toFixed(1)}%</span>
+                          </div>
+                          <Progress value={data.matchPrediction.away_win_probability * 100} className="h-3" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prediction Visualization */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Card className="glow-card">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Outcome Probabilities</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: 'Home Win', value: data.matchPrediction.home_win_probability * 100, color: '#10B981' },
+                                  { name: 'Draw', value: data.matchPrediction.draw_probability * 100, color: '#F59E0B' },
+                                  { name: 'Away Win', value: data.matchPrediction.away_win_probability * 100, color: '#3B82F6' }
+                                ]}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={40}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                <Cell fill="#10B981" />
+                                <Cell fill="#F59E0B" />
+                                <Cell fill="#3B82F6" />
+                              </Pie>
+                              <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="glow-card">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Model Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Model Type:</span>
+                              <span className="font-medium">{data.matchPrediction.model_used}</span>
+                            </div>
+                            {data.matchPrediction.features_used && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Features Used:</span>
+                                <span className="font-medium">{data.matchPrediction.features_used}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Confidence:</span>
+                              <span className="font-medium">{(data.matchPrediction.confidence * 100).toFixed(1)}%</span>
+                            </div>
+                            {data.matchPrediction.error && (
+                              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                <p className="text-sm text-red-400">⚠️ {data.matchPrediction.error}</p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Feature Insights */}
+                    <Card className="glow-card">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Key Analysis Factors</CardTitle>
+                        <CardDescription>Main factors contributing to the prediction</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="text-center p-4 rounded-lg bg-surface border border-card-border">
+                            <div className="text-2xl font-bold text-primary mb-1">
+                              {data.mlScores.teamA.metrics.possession || 50}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Home Possession</div>
+                          </div>
+                          <div className="text-center p-4 rounded-lg bg-surface border border-card-border">
+                            <div className="text-2xl font-bold text-secondary mb-1">
+                              {data.mlScores.teamA.metrics.accuracy || 0}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Pass Accuracy</div>
+                          </div>
+                          <div className="text-center p-4 rounded-lg bg-surface border border-card-border">
+                            <div className="text-2xl font-bold text-ai-purple mb-1">
+                              {data.soccerAnalytics?.goals_detected || 0}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Goals Detected</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No ML Prediction Available</h3>
+                    <p className="text-muted-foreground">
+                      The neural network model prediction is not available for this analysis.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case 'sentiment':
         return (
           <div className="space-y-6">
+            {/* Team Selection and Analysis Controls */}
+            <Card className="glow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-ai-purple" />
+                  AI Match Analysis
+                </CardTitle>
+                <CardDescription>Real-time analysis using your agent.py with Gemini AI</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">Team Name</label>
+                    <Input
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      placeholder="Enter team name (e.g., Barcelona)"
+                      className="w-full"
+                    />
+                  </div>
+                  <Button 
+                    onClick={analyzeSentiment}
+                    disabled={isAnalyzingSentiment || !teamFeedback}
+                    className="flex items-center gap-2"
+                  >
+                    {isAnalyzingSentiment ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                    {isAnalyzingSentiment ? 'Analyzing...' : 'Analyze Sentiment'}
+                  </Button>
+                </div>
+                
+                {sentimentError && (
+                  <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-500">{sentimentError}</span>
+                  </div>
+                )}
+
+                {teamFeedback && (
+                  <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <p className="text-sm text-green-500">
+                      ✓ Found feedback data for {teamFeedback.team} ({teamFeedback.matches.length} matches)
+                    </p>
+                    <p className="text-xs text-green-400 mt-1">
+                      {teamFeedback.matches.some(m => 
+                        m.analysis.overall_feedback !== 'No data available for analysis.' && 
+                        m.analysis.overall_feedback !== ''
+                      ) ? 'Rich analysis data available' : 'Using AI-enhanced analysis based on team characteristics'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="glow-card">
                 <CardHeader>
-                  <CardTitle>Fan Sentiment Distribution</CardTitle>
-                  <CardDescription>Analysis of social media reactions</CardDescription>
+                  <CardTitle>Sentiment Distribution</CardTitle>
+                  <CardDescription>
+                    {enhancedSentimentData ? 'AI-analyzed match feedback sentiment' : 'Analysis of social media reactions'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
-                        data={sentimentData}
+                        data={sentimentChartData}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -391,7 +688,7 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {sentimentData.map((entry, index) => (
+                        {sentimentChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -399,7 +696,7 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="flex justify-center gap-4 mt-4">
-                    {sentimentData.map((entry, index) => (
+                    {sentimentChartData.map((entry, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
@@ -414,16 +711,18 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
 
               <Card className="glow-card">
                 <CardHeader>
-                  <CardTitle>Trending Keywords</CardTitle>
-                  <CardDescription>Most mentioned terms by fans</CardDescription>
+                  <CardTitle>Performance Keywords</CardTitle>
+                  <CardDescription>
+                    {enhancedSentimentData ? 'AI-identified key performance indicators' : 'Most mentioned terms by fans'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {data.sentiment.keywords.map((keyword, index) => (
+                    {currentSentimentData.keywords.map((keyword, index) => (
                       <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-surface border border-card-border">
                         <span className="font-medium">#{keyword}</span>
                         <Badge variant="secondary">
-                          {Math.floor(Math.random() * 1000 + 100)} mentions
+                          {enhancedSentimentData ? 'AI-detected' : `${Math.floor(Math.random() * 1000 + 100)} mentions`}
                         </Badge>
                       </div>
                     ))}
@@ -431,6 +730,55 @@ const AnalysisResults = ({ data, onReset, uploadedFile }: AnalysisResultsProps) 
                 </CardContent>
               </Card>
             </div>
+
+            {/* Enhanced Insights and Recommendations */}
+            {enhancedSentimentData && (
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="glow-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-ai-cyan" />
+                      AI Insights
+                    </CardTitle>
+                    <CardDescription>Key observations from match analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {enhancedSentimentData.insights.map((insight, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-surface border border-card-border">
+                          <div className="w-6 h-6 rounded-full bg-ai-cyan/20 flex items-center justify-center mt-0.5">
+                            <div className="w-2 h-2 rounded-full bg-ai-cyan" />
+                          </div>
+                          <p className="text-sm">{insight}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="glow-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-ai-purple" />
+                      AI Recommendations
+                    </CardTitle>
+                    <CardDescription>Strategic suggestions based on analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {enhancedSentimentData.recommendations.map((recommendation, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-surface border border-card-border">
+                          <div className="w-6 h-6 rounded-full bg-ai-purple/20 flex items-center justify-center mt-0.5">
+                            <div className="w-2 h-2 rounded-full bg-ai-purple" />
+                          </div>
+                          <p className="text-sm">{recommendation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         );
 
