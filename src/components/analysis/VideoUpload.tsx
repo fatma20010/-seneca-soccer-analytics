@@ -137,15 +137,46 @@ const VideoUpload = ({ onFileUpload }: VideoUploadProps) => {
                 </Button>
               </div>
 
-              {/* Video Preview */}
+              {/* Video Preview - Optimized */}
               <div className="rounded-lg overflow-hidden bg-surface">
                 <video
                   src={URL.createObjectURL(selectedFile)}
                   controls
+                  preload="metadata"
                   className="w-full h-64 object-cover"
                   poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3E%3Cpath fill='%23374151' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z'/%3E%3C/svg%3E"
+                  playsInline
+                  onLoadStart={() => console.log('Video loading started')}
+                  onCanPlay={() => console.log('Video can start playing')}
                 />
               </div>
+
+              {/* File Size Warning */}
+              {selectedFile.size > 100 * 1024 * 1024 && (
+                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs text-white font-bold">!</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Large File Detected</h4>
+                      <p className="text-sm text-yellow-600 dark:text-yellow-300 mb-2">
+                        Your video is {formatFileSize(selectedFile.size)}. For better performance, consider compressing it first.
+                      </p>
+                      <details className="text-xs text-yellow-600 dark:text-yellow-300">
+                        <summary className="cursor-pointer hover:text-yellow-700 dark:hover:text-yellow-200">
+                          Show compression tips
+                        </summary>
+                        <div className="mt-2 pl-4 border-l-2 border-yellow-500/30">
+                          <p className="mb-1">• Reduce resolution to 720p or 1080p</p>
+                          <p className="mb-1">• Use H.264 codec with CRF 23-28</p>
+                          <p>• Consider using online tools like HandBrake or FFmpeg</p>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-4 justify-center">

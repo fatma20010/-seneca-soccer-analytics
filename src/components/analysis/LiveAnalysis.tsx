@@ -13,7 +13,8 @@ import {
   Zap,
   Eye,
   BarChart3,
-  Timer
+  Timer,
+  Settings
 } from 'lucide-react';
 import { soccerAnalyticsApi, LiveFrameData } from '@/services/soccerAnalyticsApi';
 
@@ -30,6 +31,7 @@ const LiveAnalysis = ({ uploadedFile, onAnalysisComplete, onError }: LiveAnalysi
   const [analysisTime, setAnalysisTime] = useState(0);
   const [frameCount, setFrameCount] = useState(0);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [performanceMode, setPerformanceMode] = useState<'fast' | 'balanced' | 'quality'>('fast');
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -143,7 +145,7 @@ const LiveAnalysis = ({ uploadedFile, onAnalysisComplete, onError }: LiveAnalysi
 
   const handleStartAnalysis = async () => {
     try {
-      const response = await soccerAnalyticsApi.startAnalysis();
+      const response = await soccerAnalyticsApi.startAnalysis(performanceMode);
       console.log('Analysis started:', response);
       
       // Start the analysis UI
@@ -273,6 +275,47 @@ const LiveAnalysis = ({ uploadedFile, onAnalysisComplete, onError }: LiveAnalysi
                 </div>
               )}
             </div>
+
+            {/* Performance Mode Selector */}
+            {!isAnalyzing && (
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Performance Mode:</label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={performanceMode === 'fast' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPerformanceMode('fast')}
+                    className="flex-1"
+                  >
+                    <Zap className="w-4 h-4 mr-1" />
+                    Fast
+                  </Button>
+                  <Button
+                    variant={performanceMode === 'balanced' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPerformanceMode('balanced')}
+                    className="flex-1"
+                  >
+                    <Settings className="w-4 h-4 mr-1" />
+                    Balanced
+                  </Button>
+                  <Button
+                    variant={performanceMode === 'quality' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPerformanceMode('quality')}
+                    className="flex-1"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Quality
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {performanceMode === 'fast' && 'Lowest quality, fastest performance - recommended for large videos'}
+                  {performanceMode === 'balanced' && 'Good balance of quality and performance'}
+                  {performanceMode === 'quality' && 'Best quality, may be slower with large videos'}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               {!isAnalyzing ? (

@@ -87,14 +87,17 @@ class SoccerAnalyticsApiService {
   }
 
   /**
-   * Start video analysis
+   * Start video analysis with performance mode
    */
-  async startAnalysis(): Promise<{ message: string }> {
+  async startAnalysis(performanceMode: 'fast' | 'balanced' | 'quality' = 'balanced'): Promise<{ message: string; mode: string }> {
     const response = await fetch(`${API_BASE_URL}/start_analysis`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        performance_mode: performanceMode
+      }),
     });
 
     if (!response.ok) {
